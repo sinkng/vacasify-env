@@ -1,11 +1,7 @@
+import { SSMClient, GetParametersCommand } from "@aws-sdk/client-ssm";
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  SSMClient,
-  GetParametersCommand,
-  GetParametersCommandInput,
-} from "@aws-sdk/client-ssm";
 
 export enum StageEnum {
   DEV = 'dev',
@@ -64,13 +60,27 @@ async function loadEnvValues(
 }
 
 /**
+ * Set env
+ *
+ * @public
+ * @async
+ * @param opts - Options to initialize
+ */
+export function init(
+  keyValuePairs: Record<string, any>,
+): void {
+  isLoaded = true;
+  ENV = {...keyValuePairs};
+}
+
+/**
  * Init env
  *
  * @public
  * @async
  * @param opts - Options to initialize
  */
-export async function init(
+export async function load(
   opts?: EnvOptions,
 ): Promise<
   void
@@ -107,12 +117,54 @@ export async function init(
  */
 export function env(
   envName: string,
-  defaultValue: string,
+  defaultValue?: string,
 ): string {
   if (!isLoaded) {
     throw new Error(
       'Env is not yet loaded. Please await init() to load env before continue.'
     );
   }
-  return ENV[envName] || defaultValue;
+  return ENV[envName] === undefined /* Resolve 0 is consider falsy */
+    ? defaultValue
+    : ENV[envName];
+}
+
+env.int = function(
+  envName: string,
+  defaultValue?: number,
+): number | undefined {
+  const value = env(envName, undefined);
+
+  if (!value) {
+    return defaultValue;
+  }
+
+  const retVal = Number(value);
+  if (isNaN(retVal)) {
+    return defaultValue;
+  }
+
+  return Number(value);
+}
+
+env.bool = function(
+  envName: string,
+  defaultValue?: boolean,
+): boolean | undefined {
+  const value = env(envName, undefined);
+
+  console.log(envName, value, ENV);
+
+
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  // Resolving Boolean("false") yields true
+  const t = value?.toString()?.trim()?.toLowerCase();
+  if (t === 'false' || t === '0') {
+    return false;
+  }
+
+  return Boolean(value);
 }

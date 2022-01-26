@@ -13,13 +13,21 @@ export declare type EnvOptions = {
     stage?: StageEnum;
 };
 /**
+ * Set env
+ *
+ * @public
+ * @async
+ * @param opts - Options to initialize
+ */
+export declare function init(keyValuePairs: Record<string, any>): void;
+/**
  * Init env
  *
  * @public
  * @async
  * @param opts - Options to initialize
  */
-export declare function init(opts?: EnvOptions): Promise<void>;
+export declare function load(opts?: EnvOptions): Promise<void>;
 /**
  * Retrieve env value
  *
@@ -29,4 +37,8 @@ export declare function init(opts?: EnvOptions): Promise<void>;
  * @returns - Env value
  * @throws {Error} - Env has not yet initialized.
  */
-export declare function env(envName: string, defaultValue: string): string;
+export declare function env(envName: string, defaultValue?: string): string;
+export declare namespace env {
+    var int: (envName: string, defaultValue?: number | undefined) => number | undefined;
+    var bool: (envName: string, defaultValue?: boolean | undefined) => boolean | undefined;
+}

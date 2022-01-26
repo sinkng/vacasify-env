@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.env = exports.init = exports.StageEnum = void 0;
+exports.env = exports.load = exports.init = exports.StageEnum = void 0;
+const client_ssm_1 = require("@aws-sdk/client-ssm");
 const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
-const client_ssm_1 = require("@aws-sdk/client-ssm");
 var StageEnum;
 (function (StageEnum) {
     StageEnum["DEV"] = "dev";
@@ -39,13 +39,25 @@ async function loadEnvValues(keys, stage) {
     }, {});
 }
 /**
+ * Set env
+ *
+ * @public
+ * @async
+ * @param opts - Options to initialize
+ */
+function init(keyValuePairs) {
+    isLoaded = true;
+    ENV = { ...keyValuePairs };
+}
+exports.init = init;
+/**
  * Init env
  *
  * @public
  * @async
  * @param opts - Options to initialize
  */
-async function init(opts) {
+async function load(opts) {
     // Parse env file the key
     let doReload = (opts === null || opts === void 0 ? void 0 : opts.force) || false;
     if (!doReload)
@@ -62,7 +74,7 @@ async function init(opts) {
     isLoaded = true;
     ENV = { ...env };
 }
-exports.init = init;
+exports.load = load;
 /**
  * Retrieve env value
  *
@@ -76,6 +88,33 @@ function env(envName, defaultValue) {
     if (!isLoaded) {
         throw new Error('Env is not yet loaded. Please await init() to load env before continue.');
     }
-    return ENV[envName] || defaultValue;
+    return ENV[envName] === undefined /* Resolve 0 is consider falsy */
+        ? defaultValue
+        : ENV[envName];
 }
 exports.env = env;
+env.int = function (envName, defaultValue) {
+    const value = env(envName, undefined);
+    if (!value) {
+        return defaultValue;
+    }
+    const retVal = Number(value);
+    if (isNaN(retVal)) {
+        return defaultValue;
+    }
+    return Number(value);
+};
+env.bool = function (envName, defaultValue) {
+    var _a, _b;
+    const value = env(envName, undefined);
+    console.log(envName, value, ENV);
+    if (value === undefined) {
+        return defaultValue;
+    }
+    // Resolving Boolean("false") yields true
+    const t = (_b = (_a = value === null || value === void 0 ? void 0 : value.toString()) === null || _a === void 0 ? void 0 : _a.trim()) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+    if (t === 'false' || t === '0') {
+        return false;
+    }
+    return Boolean(value);
+};

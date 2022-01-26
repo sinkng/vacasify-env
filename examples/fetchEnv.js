@@ -1,7 +1,7 @@
-const { init, env } = require('../build');
+const { load, env } = require('../build');
 
 (async () => {
-  await init({
+  await load({
     stage: 'dev'
   });
 

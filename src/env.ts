@@ -35,7 +35,28 @@ function loadEnvKeys(
 async function loadEnvValues(
   keys: string[],
   stage: StageEnum,
-) {
+): Promise<
+  Record<string, any>
+> {
+  /** Resolve bugs that only 10 parameters can be fetch in a batch */
+  if (keys.length > 10) {
+    let promises: any = [];
+    const items = [...keys];
+    while (true) {
+      const pageItems = items.splice(0, 10);
+      if (pageItems.length === 0) break;
+      promises = [
+        ...promises,
+        loadEnvValues(pageItems, stage),
+      ];
+    }
+    const results = await Promise.all(promises);
+    return (results || []).reduce((acc, item) => {
+      acc = { ...acc, ...item };
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
   const cmd = new GetParametersCommand({
     Names: keys.map(item => `/${stage}/${item}`),
     WithDecryption: true,
@@ -51,7 +72,7 @@ async function loadEnvValues(
 
   const { Parameters: results } = await client.send(cmd);
 
-  return results?.reduce((acc, item) => {
+  return (results || []).reduce((acc, item) => {
     const { Name: name, Value: value } = item;
     const k = name?.replace(`/${stage}/`, '') as string;
     acc[k] = value;

@@ -19,6 +19,25 @@ function loadEnvKeys(envFilename, cwd) {
     return Object.keys(config);
 }
 async function loadEnvValues(keys, stage) {
+    /** Resolve bugs that only 10 parameters can be fetch in a batch */
+    if (keys.length > 10) {
+        let promises = [];
+        const items = [...keys];
+        while (true) {
+            const pageItems = items.splice(0, 10);
+            if (pageItems.length === 0)
+                break;
+            promises = [
+                ...promises,
+                loadEnvValues(pageItems, stage),
+            ];
+        }
+        const results = await Promise.all(promises);
+        return (results || []).reduce((acc, item) => {
+            acc = { ...acc, ...item };
+            return acc;
+        }, {});
+    }
     const cmd = new client_ssm_1.GetParametersCommand({
         Names: keys.map(item => `/${stage}/${item}`),
         WithDecryption: true,
@@ -31,7 +50,7 @@ async function loadEnvValues(keys, stage) {
         },
     });
     const { Parameters: results } = await client.send(cmd);
-    return results === null || results === void 0 ? void 0 : results.reduce((acc, item) => {
+    return (results || []).reduce((acc, item) => {
         const { Name: name, Value: value } = item;
         const k = name === null || name === void 0 ? void 0 : name.replace(`/${stage}/`, '');
         acc[k] = value;

@@ -141,9 +141,7 @@ export function env(
   defaultValue?: string,
 ): string {
   if (!isLoaded) {
-    throw new Error(
-      'Env is not yet loaded. Please await init() to load env before continue.'
-    );
+    console.warn('Env is not yet loaded. Please await init() to load env before continue.');
   }
   return ENV[envName] === undefined /* Resolve 0 is consider falsy */
     ? defaultValue

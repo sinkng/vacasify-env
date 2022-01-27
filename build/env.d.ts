@@ -1,17 +1,4 @@
-export declare enum StageEnum {
-    DEV = "dev",
-    PROD = "prod"
-}
-export declare type EnvOptions = {
-    /** Current working directory. Default process.cwd() */
-    cwd?: string;
-    /** Default ".env.example" */
-    envFilename?: string;
-    /** Default false */
-    force?: boolean;
-    /** Stage. Default "dev" */
-    stage?: StageEnum;
-};
+import { EnvOptions } from './types';
 /**
  * Set env
  *
@@ -27,7 +14,7 @@ export declare function init(keyValuePairs: Record<string, any>): void;
  * @async
  * @param opts - Options to initialize
  */
-export declare function load(opts?: EnvOptions): Promise<void>;
+export declare function load(opts: EnvOptions): Promise<void>;
 /**
  * Retrieve env value
  *

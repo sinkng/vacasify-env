@@ -1,23 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.env = exports.load = exports.init = exports.StageEnum = void 0;
+exports.env = exports.load = exports.init = void 0;
 const client_ssm_1 = require("@aws-sdk/client-ssm");
-const dotenv = require("dotenv");
-const fs = require("fs");
-const path = require("path");
-var StageEnum;
-(function (StageEnum) {
-    StageEnum["DEV"] = "dev";
-    StageEnum["PROD"] = "prod";
-})(StageEnum = exports.StageEnum || (exports.StageEnum = {}));
+const yml_to_env_1 = require("./utils/yml-to-env");
 let ENV = {};
 let isLoaded = false;
-function loadEnvKeys(envFilename, cwd) {
-    const envFile = path.resolve(cwd, envFilename);
-    const buf = Buffer.from(fs.readFileSync(envFile, { encoding: 'utf-8' }));
-    const config = dotenv.parse(buf) || {};
-    return Object.keys(config);
-}
 async function loadEnvValues(keys, stage) {
     /** Resolve bugs that only 10 parameters can be fetch in a batch */
     if (keys.length > 10) {
@@ -78,17 +65,26 @@ exports.init = init;
  */
 async function load(opts) {
     // Parse env file the key
-    let doReload = (opts === null || opts === void 0 ? void 0 : opts.force) || false;
+    let doReload = opts.force || false;
     if (!doReload)
         doReload = isLoaded === false;
     if (!doReload)
         return;
     // Get keys
-    const envFilename = (opts === null || opts === void 0 ? void 0 : opts.envFilename) || '.env.example';
+    const envFilename = opts.envFilename || '.env.yml';
     const cwd = (opts === null || opts === void 0 ? void 0 : opts.cwd) || process.cwd();
-    const envKeys = loadEnvKeys(envFilename, cwd);
-    // Load env values
-    const env = await loadEnvValues(envKeys, (opts === null || opts === void 0 ? void 0 : opts.stage) || StageEnum.DEV);
+    const envArray = (0, yml_to_env_1.default)(envFilename, cwd);
+    // Fetch env values
+    const keys = envArray.map(item => item.name);
+    const env = await loadEnvValues(keys, opts.stage);
+    // Dangerously injecting into process.env only-if specified
+    envArray.forEach(item => {
+        const { name, dangerouslyInjectIntoProcessEnvAs: dangerously } = item;
+        if (dangerously) {
+            // Inject
+            process.env[dangerously] = env[name];
+        }
+    });
     // Set
     isLoaded = true;
     ENV = { ...env };

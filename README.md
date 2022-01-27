@@ -18,11 +18,6 @@ Any backend service is using this module - SHOULD always load the env first befo
 
 ```
 
-enum StageEnum {
-  DEV = 'dev',
-  PROD = 'prod',
-}
-
 type EnvOptions = {
   /** Current working directory. Default process.cwd() */
   cwd?: string;
@@ -33,11 +28,11 @@ type EnvOptions = {
   /** Whether to force loading (even if already loaded). Default false */
   force?: boolean;
 
-  /** Stage. Default "dev" */
-  stage?: StageEnum,
+  /** Indicating what stage to fetch env */
+  stage: "dev" | "prod" | string,
 }
 
-async load(opts?: EnvOptions): Promise<void>;
+async load(opts: EnvOptions): Promise<void>;
 
 init(keyValuePairs: Record<string, any>): void;
 
@@ -60,6 +55,8 @@ import { load as loadEnv, env } from '@sinkng/vacasify-env';
   await loadEnv();
 
   console.log(env('backoffice___DB_NAME'));
+
+  console.log(process.env);
 })();
 
 ```
@@ -74,6 +71,8 @@ const { load: loadEnv, env } = require('@sinkng/vacasify-env');
   await loadEnv();
 
   console.log(env('backoffice___DB_NAME'));
+
+  console.log(process.env);
 })();
 
 ```

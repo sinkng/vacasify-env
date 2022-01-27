@@ -1,36 +1,10 @@
+import { EnvOptions } from './types';
+import { StageEnum } from './enums';
 import { SSMClient, GetParametersCommand } from "@aws-sdk/client-ssm";
-import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as path from 'path';
-
-export enum StageEnum {
-  DEV = 'dev',
-  PROD = 'prod',
-}
-
-export type EnvOptions = {
-  /** Current working directory. Default process.cwd() */
-  cwd?: string;
-  /** Default ".env.example" */
-  envFilename?: string;
-  /** Default false */
-  force?: boolean;
-  /** Stage. Default "dev" */
-  stage?: StageEnum,
-}
+import ymlToEnv from './utils/yml-to-env';
 
 let ENV = {};
 let isLoaded = false;
-
-function loadEnvKeys(
-  envFilename: string,
-  cwd: string,
-): string[] {
-  const envFile = path.resolve(cwd, envFilename);
-  const buf = Buffer.from(fs.readFileSync(envFile, { encoding: 'utf-8'}));
-  const config = dotenv.parse(buf) || {};
-  return Object.keys(config);
-}
 
 async function loadEnvValues(
   keys: string[],
@@ -102,25 +76,32 @@ export function init(
  * @param opts - Options to initialize
  */
 export async function load(
-  opts?: EnvOptions,
+  opts: EnvOptions,
 ): Promise<
   void
 > {
   // Parse env file the key
-  let doReload = opts?.force || false;
+  let doReload = opts.force || false;
   if (!doReload) doReload = isLoaded === false;
   if (!doReload) return;
 
   // Get keys
-  const envFilename = opts?.envFilename || '.env.example';
+  const envFilename = opts.envFilename || '.env.yml';
   const cwd = opts?.cwd || process.cwd();
-  const envKeys = loadEnvKeys(envFilename, cwd);
+  const envArray = ymlToEnv(envFilename, cwd);
 
-  // Load env values
-  const env = await loadEnvValues(
-    envKeys,
-    opts?.stage || StageEnum.DEV,
-  );
+  // Fetch env values
+  const keys = envArray.map(item => item.name);
+  const env = await loadEnvValues(keys, opts.stage as unknown as StageEnum.DEV);
+
+  // Dangerously injecting into process.env only-if specified
+  envArray.forEach(item => {
+    const { name, dangerouslyInjectIntoProcessEnvAs: dangerously } = item;
+    if (dangerously) {
+      // Inject
+      process.env[dangerously] = env[name];
+    }
+  });
 
   // Set
   isLoaded = true;

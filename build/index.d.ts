@@ -1,2 +1,3 @@
-import { env, EnvOptions, init, load, StageEnum } from './env';
-export { env, EnvOptions, init, load, StageEnum, };
+export { Env, EnvOptions } from './types';
+export { StageEnum } from './enums';
+export { env, init, load } from './env';

@@ -79,7 +79,7 @@ const { load: loadEnv, env } = require('@sinkng/vacasify-env');
 ```
 
 
-## .env.yml template
+## ".env.yml" template
 
 ```
 
@@ -101,3 +101,7 @@ const { load: loadEnv, env } = require('@sinkng/vacasify-env');
   # will inject into process.env as "process.env.API_TOKEN_SALT" and which allow hacker to steal our env
 
 ```
+
+## AWS Parameter Store
+
+Should create new parameter store with this format ```/{stage}/{productName}___{varName}``` e.g. ```/dev/backoffice___DB_PASSWORD```

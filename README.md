@@ -14,9 +14,15 @@ This package requires these env variables for fetch from AWS Paramter Store. Ple
 Any backend service is using this module - SHOULD always load the env first before start their application.
 
 
-## Public Methods
+## Methods & Types
 
 ```
+
+enum StageEnum {
+  DEV = 'dev',
+  PROD = 'prod',
+}
+
 type EnvOptions = {
   /** Current working directory. Default process.cwd() */
   cwd?: string;

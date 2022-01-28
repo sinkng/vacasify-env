@@ -11,18 +11,17 @@ function ymlToEnv(envFilename, cwd) {
         throw new Error(`${envFilename} should contains array.`);
     }
     return parsedEnvArr.reduce((acc, item) => {
-        let obj = undefined;
         if (typeof item === 'string') {
-            obj = { name: item };
+            acc.push({ name: item });
+            return acc;
         }
-        else {
-            obj = { name: item.name };
-            const dangerously = item['dangerously-inject-into-process-env-as'];
-            if (dangerously !== undefined) {
-                obj.dangerouslyInjectIntoProcessEnvAs = dangerously;
-            }
-        }
-        acc.push(obj);
+        const { name, alias } = item;
+        const dangerously = item['dangerously-inject-into-process-env-as'];
+        acc.push({
+            name,
+            alias,
+            dangerouslyInjectIntoProcessEnvAs: dangerously,
+        });
         return acc;
     }, []);
 }

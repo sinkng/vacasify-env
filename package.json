@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.48.0",
-    "lodash": "^4.17.21",
     "yaml": "^2.0.0-10"
   }
 }

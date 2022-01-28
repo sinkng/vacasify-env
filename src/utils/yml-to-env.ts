@@ -17,17 +17,18 @@ export default function ymlToEnv(
   }
 
   return parsedEnvArr.reduce((acc, item) => {
-    let obj = undefined as unknown as Env;
     if (typeof item === 'string') {
-      obj = { name: item };
-    } else {
-      obj = { name: item.name };
-      const dangerously = item['dangerously-inject-into-process-env-as'];
-      if (dangerously !== undefined) {
-        obj.dangerouslyInjectIntoProcessEnvAs = dangerously;
-      }
+      acc.push({ name: item });
+      return acc;
     }
-    acc.push(obj);
+
+    const { name, alias } = item;
+    const dangerously = item['dangerously-inject-into-process-env-as'];
+    acc.push({
+      name,
+      alias,
+      dangerouslyInjectIntoProcessEnvAs: dangerously,
+    });
     return acc;
   }, [] as Env[]);
 }

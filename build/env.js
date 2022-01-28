@@ -77,17 +77,19 @@ async function load(opts) {
     // Fetch env values
     const keys = envArray.map(item => item.name);
     const env = await loadEnvValues(keys, opts.stage);
-    // Dangerously injecting into process.env only-if specified
-    envArray.forEach(item => {
-        const { name, dangerouslyInjectIntoProcessEnvAs: dangerously } = item;
-        if (dangerously) {
-            // Inject
-            process.env[dangerously] = env[name];
-        }
-    });
     // Set
     isLoaded = true;
     ENV = { ...env };
+    // Dangerously injecting into process.env only-if specified
+    envArray.forEach(item => {
+        const { name, alias, dangerouslyInjectIntoProcessEnvAs: dangerously, } = item;
+        if (dangerously !== undefined) {
+            process.env[dangerously] = env[name];
+        }
+        if (alias !== undefined) {
+            ENV[alias] = env[name];
+        }
+    });
 }
 exports.load = load;
 /**

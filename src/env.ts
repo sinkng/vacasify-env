@@ -1,14 +1,16 @@
-import { EnvOptions } from './types';
+import { EnvOptions, Credentials } from './types';
 import { StageEnum } from './enums';
 import { SSMClient, GetParametersCommand } from "@aws-sdk/client-ssm";
 import ymlToEnv from './utils/yml-to-env';
 
 let ENV = {};
 let isLoaded = false;
+let client = undefined as unknown as SSMClient;
 
 async function loadEnvValues(
   keys: string[],
   stage: StageEnum,
+  credentials: Credentials,
 ): Promise<
   Record<string, any>
 > {
@@ -21,7 +23,7 @@ async function loadEnvValues(
       if (pageItems.length === 0) break;
       promises = [
         ...promises,
-        loadEnvValues(pageItems, stage),
+        loadEnvValues(pageItems, stage, credentials),
       ];
     }
     const results = await Promise.all(promises);
@@ -36,13 +38,15 @@ async function loadEnvValues(
     WithDecryption: true,
   });
 
-  const client = new SSMClient({
-    region: process.env.AWS_REGION as string,
-    credentials: {
-      accessKeyId: process.env.AWS_SSM_KEY as string,
-      secretAccessKey: process.env.AWS_SSM_SEC as string,
-    },
-  });
+  if (!client) {
+    client = new SSMClient({
+      region: credentials.awsRegion,
+      credentials: {
+        accessKeyId: credentials.awsKey,
+        secretAccessKey: credentials.awsSecret,
+      },
+    });
+  }
 
   const { Parameters: results } = await client.send(cmd);
 
@@ -92,7 +96,11 @@ export async function load(
 
   // Fetch env values
   const keys = envArray.map(item => item.name);
-  const env = await loadEnvValues(keys, opts.stage as unknown as StageEnum.DEV);
+  const env = await loadEnvValues(
+    keys,
+    opts.stage as unknown as StageEnum.DEV,
+    opts.credentials,
+  );
 
   // Set
   isLoaded = true;

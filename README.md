@@ -2,13 +2,12 @@
 
 Resolving loading env in a secure way. Prevent other packages to steal our ```process.env``` variables.
 
-## Requirements
+## Credentials
 
-This package requires these env variables for fetch from AWS Paramter Store. Please restrict this key to only certain resources using AWS IAM console.
+A pair of key and secret to fetch from AWS Paramter Store.
 
-```process.env.AWS_REGION```
-```process.env.AWS_SSM_KEY```
-```process.env.AWS_SSM_SEC```
+Please RESTRICT this key to only certain resources using AWS IAM console.
+
 
 ## Load env
 Any backend service is using this module - SHOULD always load the env first before start their application.
@@ -17,6 +16,11 @@ Any backend service is using this module - SHOULD always load the env first befo
 ## Methods & Types
 
 ```
+type Credentials = {
+  awsRegion: string;
+  awsKey: string;
+  awsSecret: string;
+}
 
 type EnvOptions = {
   /** Current working directory. Default process.cwd() */
@@ -30,6 +34,9 @@ type EnvOptions = {
 
   /** Indicating what stage to fetch env */
   stage: "dev" | "prod" | string,
+
+  /** Credentials to fetch from aws. Note this credentials should be controlled in IAM to only allow certain access */
+  credentials: Credentials;
 }
 
 async load(opts: EnvOptions): Promise<void>;

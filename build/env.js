@@ -5,7 +5,8 @@ const client_ssm_1 = require("@aws-sdk/client-ssm");
 const yml_to_env_1 = require("./utils/yml-to-env");
 let ENV = {};
 let isLoaded = false;
-async function loadEnvValues(keys, stage) {
+let client = undefined;
+async function loadEnvValues(keys, stage, credentials) {
     /** Resolve bugs that only 10 parameters can be fetch in a batch */
     if (keys.length > 10) {
         let promises = [];
@@ -16,7 +17,7 @@ async function loadEnvValues(keys, stage) {
                 break;
             promises = [
                 ...promises,
-                loadEnvValues(pageItems, stage),
+                loadEnvValues(pageItems, stage, credentials),
             ];
         }
         const results = await Promise.all(promises);
@@ -29,13 +30,15 @@ async function loadEnvValues(keys, stage) {
         Names: keys.map(item => `/${stage}/${item}`),
         WithDecryption: true,
     });
-    const client = new client_ssm_1.SSMClient({
-        region: process.env.AWS_REGION,
-        credentials: {
-            accessKeyId: process.env.AWS_SSM_KEY,
-            secretAccessKey: process.env.AWS_SSM_SEC,
-        },
-    });
+    if (!client) {
+        client = new client_ssm_1.SSMClient({
+            region: credentials.awsRegion,
+            credentials: {
+                accessKeyId: credentials.awsKey,
+                secretAccessKey: credentials.awsSecret,
+            },
+        });
+    }
     const { Parameters: results } = await client.send(cmd);
     return (results || []).reduce((acc, item) => {
         const { Name: name, Value: value } = item;
@@ -76,7 +79,7 @@ async function load(opts) {
     const envArray = (0, yml_to_env_1.default)(envFilename, cwd);
     // Fetch env values
     const keys = envArray.map(item => item.name);
-    const env = await loadEnvValues(keys, opts.stage);
+    const env = await loadEnvValues(keys, opts.stage, opts.credentials);
     // Set
     isLoaded = true;
     ENV = { ...env };

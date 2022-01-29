@@ -1,4 +1,5 @@
 import { StageEnum } from '../enums';
+import { Credentials } from '../types';
 
 export type EnvOptions = {
   /** Current working directory. Default process.cwd() */
@@ -12,4 +13,7 @@ export type EnvOptions = {
 
   /** Indicating what stage to fetch env */
   stage: StageEnum | string,
+
+  /** Credentials to retrieve env */
+  credentials: Credentials;
 }
